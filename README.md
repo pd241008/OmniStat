@@ -62,6 +62,3 @@ npm run dev
 
 > [!IMPORTANT]
 > **OmniStat** requires a GitHub Personal Access Token with `repo` and `read:user` scopes to function. Configure this in the Forge's environment variables.
-
----
-*(C) 2026 BLUME_CORP // DATA_SEC_PROTOCOL*
