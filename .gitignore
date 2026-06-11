@@ -1,0 +1,49 @@
+# General
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.log
+
+# Node & Next.js (frontend)
+node_modules/
+.next/
+out/
+build/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+
+# Go (backend)
+/backend/bin/
+/backend/tmp/
+/backend/backend
+/backend/*.exe
+/backend/*.exe~
+/backend/*.dll
+/backend/*.so
+/backend/*.dylib
+/backend/*.test
+/backend/*.out
+
+# Scala & sbt (data / The Forge)
+/data/target/
+/data/project/target/
+/data/.bsp/
+/data/.scala-build/
+/data/.metals/
+/data/.ammonite/
+/data/*.class
+/data/*.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Documentation
+/doc/

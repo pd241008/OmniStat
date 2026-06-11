@@ -64,4 +64,11 @@ npm run dev
 > **OmniStat** requires a GitHub Personal Access Token with `repo` and `read:user` scopes to function. Configure this in the Forge's environment variables.
 
 ---
-*(C) 2026 BLUME_CORP // DATA_SEC_PROTOCOL*
+
+
+## 🎯 Project Roadmap
+- [x] **Phase 1**: Polyglot Telemetry Core Setup.
+- [x] **Phase 2**: Data Ingestion Layer & Backend.
+- [x] **Phase 3**: Frontend UI Foundations.
+- [ ] **Phase 4**: Feature Implementation & Dashboard Integration.
+- [ ] **Phase 5**: Full-Stack Polish.
