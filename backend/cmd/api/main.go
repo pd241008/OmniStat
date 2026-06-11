@@ -1,12 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"code-telemetry-engine/backend/internal/gateway"
-	_ "github.com/lib/pq"
 )
 
 type Metric struct {
