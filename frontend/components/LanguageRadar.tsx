@@ -1,18 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const LanguageRadar = () => {
   const [mounted, setMounted] = useState(false);
   const [rotation, setRotation] = useState(0);
   
-  const languages = [
-    { name: "Scala", val: 85 },
-    { name: "Go", val: 70 },
-    { name: "TypeScript", val: 95 },
-    { name: "Python", val: 40 },
-    { name: "Rust", val: 60 },
-  ];
+  const { data: languages, error } = useSWR("http://localhost:8080/api/v1/metrics/languages", fetcher, {
+    refreshInterval: 10000,
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -29,22 +28,29 @@ const LanguageRadar = () => {
   return (
     <div className="brutal-border p-4 bg-background h-72 font-mono text-sm relative overflow-hidden box-glow group">
       <div className="absolute top-0 right-0 p-2 text-xs font-bold bg-dim text-foreground z-10">LANGUAGE_RADAR</div>
-      <div className="flex flex-col gap-3 mt-4 relative z-10">
-        {languages.map((lang, index) => (
-          <div key={lang.name} className="flex flex-col group-hover:opacity-100 transition-opacity">
-            <div className="flex justify-between mb-1 font-bold">
-              <span>{lang.name}</span>
-              <span className="text-glow">{lang.val}%</span>
+      
+      {error ? (
+        <div className="mt-8 text-red-500 font-bold animate-pulse text-glow z-10 relative">ERROR: GATEWAY_UNREACHABLE</div>
+      ) : !languages ? (
+        <div className="mt-8 animate-pulse font-bold z-10 relative">SCANNING_REPOSITORIES...</div>
+      ) : (
+        <div className="flex flex-col gap-3 mt-4 relative z-10">
+          {languages.map((lang: any, index: number) => (
+            <div key={lang.name} className="flex flex-col transition-opacity">
+              <div className="flex justify-between mb-1 font-bold">
+                <span>{lang.name}</span>
+                <span className="text-glow">{lang.val}%</span>
+              </div>
+              <div className="w-full h-2 border border-foreground bg-dim overflow-hidden">
+                <div 
+                  className="h-full bg-foreground shadow-[0_0_8px_#00FF41]" 
+                  style={{ width: `${lang.val}%`, animation: `grow ${0.5 + index * 0.1}s ease-out forwards` }}
+                />
+              </div>
             </div>
-            <div className="w-full h-2 border border-foreground bg-dim overflow-hidden">
-              <div 
-                className="h-full bg-foreground shadow-[0_0_8px_#00FF41]" 
-                style={{ width: `${lang.val}%`, animation: `grow ${0.5 + index * 0.1}s ease-out forwards` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       
       {/* Decorative radar lines */}
       <div className="absolute -bottom-16 -right-16 opacity-30 pointer-events-none group-hover:opacity-50 transition-opacity">
