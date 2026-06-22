@@ -3,6 +3,13 @@
 import React, { useEffect, useRef, useState } from "react";
 
 const TerminalFeed = () => {
+  const [mounted, setMounted] = useState(false);
+  const [lines, setLines] = useState<string[]>([]);
+
+  // TODO: Phase 4 - Implement real-time or historical activity streaming.
+  // Remove these mock logs and fetch actual recent codebase actions (commits, PRs)
+  // from `http://localhost:8080/api/v1/metrics/activity` to stream into the feed.
+
   const [logs, setLogs] = useState<string[]>([
     "[SYSTEM] OMNISTAT KERNEL INITIALIZED",
     "[SYSTEM] ESTABLISHING GATEWAY CONNECTION...",

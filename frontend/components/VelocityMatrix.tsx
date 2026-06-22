@@ -4,6 +4,12 @@ import React, { useEffect, useState } from "react";
 
 const VelocityMatrix = () => {
   const [mounted, setMounted] = useState(false);
+  const [nodes, setNodes] = useState<number[]>([]);
+
+  // TODO: Phase 4 - Replace client-side random node intensity with real temporal heatmap data.
+  // We need to use `useSWR` here to fetch from `http://localhost:8080/api/v1/metrics/velocity`
+  // and map the actual commit density arrays into the visual grid.
+
   const [intensities, setIntensities] = useState<number[]>([]);
   
   const rows = 8;
