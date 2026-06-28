@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"code-telemetry-engine/backend/internal/database"
 	"code-telemetry-engine/backend/internal/gateway"
@@ -19,21 +24,41 @@ func main() {
 	// Register API Routes
 	mux.HandleFunc("/api/v1/metrics/generic", middleware.CorsMiddleware(handlers.HandleGenericMetrics))
 	mux.HandleFunc("/api/v1/metrics/languages", middleware.CorsMiddleware(handlers.HandleLanguageMetrics))
-	
-	// TODO: Phase 4 - Create /api/v1/metrics/velocity endpoint.
-	// This should query ClickHouse for temporal heatmapping (commits grouped by hour/day)
-	// and serve a dense array to the Next.js VelocityMatrix component.
-
-	// TODO: Phase 4 - Create /api/v1/metrics/activity endpoint.
-	// This should fetch a chronological stream of the latest events (commits, pushes)
-	// from ClickHouse to power the TerminalFeed component.
+	mux.HandleFunc("/api/v1/metrics/velocity", middleware.CorsMiddleware(handlers.HandleVelocityMetrics))
+	mux.HandleFunc("/api/v1/metrics/activity", middleware.CorsMiddleware(handlers.HandleActivityMetrics))
 
 	// Deep-dive proxy route to Scala backend
-	scalaServiceURL := "http://localhost:9000"
+	scalaServiceURL := os.Getenv("SCALA_SERVICE_URL")
+	if scalaServiceURL == "" {
+		scalaServiceURL = "http://localhost:9000"
+	}
 	mux.HandleFunc("/api/v1/metrics/deep-dive", middleware.CorsMiddleware(gateway.SetupProxy(scalaServiceURL)))
 
-	log.Println("[SERVER] API Gateway starting on :8080...")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
 	}
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Println("[SERVER] API Gateway starting on :8080...")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	<-quit
+	log.Println("[SERVER] Shutting down gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced shutdown: %v", err)
+	}
+
+	log.Println("[SERVER] Server exited")
 }

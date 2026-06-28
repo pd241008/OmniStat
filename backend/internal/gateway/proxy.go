@@ -12,14 +12,17 @@ import (
 func SetupProxy(scalaTargetURL string) http.HandlerFunc {
 	target, err := url.Parse(scalaTargetURL)
 	if err != nil {
-		log.Fatalf("Invalid Scala target URL: %v", err)
+		log.Printf("[ERROR] Invalid Scala target URL %q: %v", scalaTargetURL, err)
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "Bad gateway configuration", http.StatusInternalServerError)
+		}
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Example: Strip the /api/v1/deep-dive prefix before sending to Scala
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api/v1/deep-dive")
+		// Strip the /api/v1/metrics/deep-dive prefix before sending to Scala
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api/v1/metrics/deep-dive")
 		
 		// If Scala expects a specific endpoint like /graphql
 		if r.URL.Path == "" || r.URL.Path == "/" {
