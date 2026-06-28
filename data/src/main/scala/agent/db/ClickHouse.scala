@@ -29,11 +29,20 @@ object ClickHouse {
       ) ENGINE = MergeTree()
       ORDER BY id
     """)
+    stmt.execute("""
+      CREATE TABLE IF NOT EXISTS commit_metrics (
+        repo_name String,
+        committed_at DateTime,
+        message String DEFAULT '',
+        updated_at DateTime DEFAULT now()
+      ) ENGINE = MergeTree()
+      ORDER BY (repo_name, committed_at)
+    """)
     stmt.close()
     conn
   }
 
-  def upsertLanguages(conn: Connection, langMap: scala.collection.mutable.Map[String, Long]): Unit = {
+  def upsertLanguages(conn: Connection, langMap: Map[String, Long]): Unit = {
     val insertStmt = conn.prepareStatement("INSERT INTO repo_languages (language, byte_count) VALUES (?, ?)")
     
     langMap.foreach { case (lang, bytes) =>
@@ -45,5 +54,27 @@ object ClickHouse {
     insertStmt.executeBatch()
     insertStmt.close()
     println(s"[SUCCESS] Inserted/Updated ${langMap.size} language metrics in ClickHouse")
+  }
+
+  def upsertCommits(conn: Connection, commits: Seq[(String, String, String)]): Unit = {
+    if (commits.isEmpty) {
+      println("[INFO] No commit data to insert")
+      return
+    }
+
+    val insertStmt = conn.prepareStatement("INSERT INTO commit_metrics (repo_name, committed_at, message) VALUES (?, ?, ?)")
+    
+    commits.foreach { case (repoName, committedAt, message) =>
+      insertStmt.setString(1, repoName)
+      // Convert ISO 8601 to ClickHouse DateTime format: "2024-01-15 10:30:00"
+      val chDate = committedAt.replace("T", " ").replace("Z", "").take(19)
+      insertStmt.setString(2, chDate)
+      insertStmt.setString(3, if (message.length > 200) message.take(200) else message)
+      insertStmt.addBatch()
+    }
+    
+    insertStmt.executeBatch()
+    insertStmt.close()
+    println(s"[SUCCESS] Inserted ${commits.size} commit records in ClickHouse")
   }
 }

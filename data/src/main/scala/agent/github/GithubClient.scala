@@ -22,9 +22,20 @@ object GithubClient {
                 }
               }
             }
-            // TODO: Phase 4 - Expand this GraphQL query to fetch temporal commit data.
-            // We need to fetch `defaultBranchRef` -> `target` -> `history` to calculate 
-            // commit velocity and power the Temporal Heatmapping visualizations.
+            defaultBranchRef {
+              target {
+                ... on Commit {
+                  history(first: 100) {
+                    edges {
+                      node {
+                        committedDate
+                        message
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -33,6 +44,10 @@ object GithubClient {
 
   def fetchData(token: String): Either[String, GithubResponse] = {
     val backend = HttpClientSyncBackend()
+    fetchDataWithBackend(token, backend)
+  }
+
+  def fetchDataWithBackend(token: String, backend: SttpBackend[Identity, Any]): Either[String, GithubResponse] = {
     val request = basicRequest
       .post(uri"$GITHUB_GRAPHQL_URL")
       .header("Authorization", s"Bearer $token")

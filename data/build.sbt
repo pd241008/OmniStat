@@ -11,5 +11,9 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
-  "com.clickhouse" % "clickhouse-jdbc" % "0.6.0"
+  "com.clickhouse" % "clickhouse-jdbc" % "0.6.0",
+  "org.scalatest" %% "scalatest" % "3.2.18" % Test,
+  "org.scalamock" %% "scalamock" % "5.2.0" % Test
 )
+
+Test / parallelExecution := false

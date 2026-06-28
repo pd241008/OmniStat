@@ -11,6 +11,11 @@ import (
 
 var db driver.Conn
 
+// SetDB sets the ClickHouse connection (used for testing)
+func SetDB(conn driver.Conn) {
+	db = conn
+}
+
 // InitDB initializes the ClickHouse connection using environment variables
 func InitDB() {
 	var err error
