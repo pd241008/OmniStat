@@ -21,20 +21,16 @@ func SetupProxy(scalaTargetURL string) http.HandlerFunc {
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Strip the /api/v1/metrics/deep-dive prefix before sending to Scala
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api/v1/metrics/deep-dive")
-		
-		// If Scala expects a specific endpoint like /graphql
+
 		if r.URL.Path == "" || r.URL.Path == "/" {
 			r.URL.Path = "/graphql"
 		}
 
 		r.Host = target.Host
-		
-		// Log the proxy forward for observability
+
 		log.Printf("[GATEWAY] Proxying request to: %s%s", target.Host, r.URL.Path)
 
-		// Execute proxy
 		proxy.ServeHTTP(w, r)
 	}
 }
