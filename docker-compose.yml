@@ -1,17 +1,16 @@
-version: '3.8'
-
 services:
-  db:
-    image: postgres:15-alpine
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
     environment:
-      POSTGRES_USER: omnistat
-      POSTGRES_PASSWORD: omnistat_password
-      POSTGRES_DB: omnistat_db
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_DB: default
     ports:
-      - "5432:5432"
+      - "8123:8123"
+      - "9000:9000"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - clickhouse_data:/var/lib/clickhouse
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
-  postgres_data:
+  clickhouse_data:

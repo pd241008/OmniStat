@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"code-telemetry-engine/backend/internal/database"
-	"code-telemetry-engine/backend/internal/gateway"
 	"code-telemetry-engine/backend/internal/handlers"
 	"code-telemetry-engine/backend/internal/middleware"
 )
@@ -26,13 +25,6 @@ func main() {
 	mux.HandleFunc("/api/v1/metrics/languages", middleware.CorsMiddleware(handlers.HandleLanguageMetrics))
 	mux.HandleFunc("/api/v1/metrics/velocity", middleware.CorsMiddleware(handlers.HandleVelocityMetrics))
 	mux.HandleFunc("/api/v1/metrics/activity", middleware.CorsMiddleware(handlers.HandleActivityMetrics))
-
-	// Deep-dive proxy route to Scala backend
-	scalaServiceURL := os.Getenv("SCALA_SERVICE_URL")
-	if scalaServiceURL == "" {
-		scalaServiceURL = "http://localhost:9000"
-	}
-	mux.HandleFunc("/api/v1/metrics/deep-dive", middleware.CorsMiddleware(gateway.SetupProxy(scalaServiceURL)))
 
 	server := &http.Server{
 		Addr:    ":8080",
