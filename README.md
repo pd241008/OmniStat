@@ -162,6 +162,19 @@ cd frontend && npm run dev
 
 ---
 
+## ✅ Test Matrix
+
+| Layer | Language | Tests | Runner |
+|-------|----------|-------|--------|
+| The Forge | Scala | 32 | `cd data && sbt test` |
+| The Gateway | Go | 28 | `cd backend && go test ./...` |
+| The Terminal | TypeScript | 17 | `cd frontend && npm test` |
+| **Total** | **3** | **77** | — |
+
+> All test files are symlinked into [`tests/`](tests/) for a unified view.
+
+---
+
 ## 🎯 Project Roadmap
 - [x] **Phase 1**: Polyglot Telemetry Core Setup.
 - [x] **Phase 2**: Data Ingestion Layer & Backend.
