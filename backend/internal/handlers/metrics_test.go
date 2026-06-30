@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -334,6 +335,170 @@ func TestHandleVelocityMetricsWithDB(t *testing.T) {
 	}
 	if int(results[0]["hour"].(float64)) != 10 || int(results[0]["day"].(float64)) != 1 || int(results[0]["commits"].(float64)) != 5 {
 		t.Errorf("unexpected first velocity entry: %+v", results[0])
+	}
+}
+
+func TestHandleLanguageMetricsWithDBQueryError(t *testing.T) {
+	mockDB := &mockConn{
+		queryFunc: func(ctx context.Context, query string, args ...interface{}) (driver.Rows, error) {
+			return nil, fmt.Errorf("clickhouse connection refused")
+		},
+	}
+	database.SetDB(mockDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/languages", nil)
+	rec := httptest.NewRecorder()
+
+	HandleLanguageMetrics(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+
+	var langMetrics []models.LanguageMetric
+	if err := json.Unmarshal(rec.Body.Bytes(), &langMetrics); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(langMetrics) != 0 {
+		t.Errorf("expected empty language metrics on query error, got %d", len(langMetrics))
+	}
+}
+
+func TestHandleLanguageMetricsWithEmptyResults(t *testing.T) {
+	mockDB := &mockConn{
+		queryFunc: func(ctx context.Context, query string, args ...interface{}) (driver.Rows, error) {
+			return &mockRows{
+				columns: []string{"language", "total_bytes"},
+				data:    []mockRow{},
+			}, nil
+		},
+	}
+	database.SetDB(mockDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/languages", nil)
+	rec := httptest.NewRecorder()
+
+	HandleLanguageMetrics(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+
+	var langMetrics []models.LanguageMetric
+	if err := json.Unmarshal(rec.Body.Bytes(), &langMetrics); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(langMetrics) != 3 {
+		t.Errorf("expected 3 fallback language metrics, got %d", len(langMetrics))
+	}
+	if langMetrics[0].Name != "Scala" || langMetrics[0].Value != 85 {
+		t.Errorf("expected first fallback metric Scala=85, got %+v", langMetrics[0])
+	}
+}
+
+func TestHandleGenericMetricsWithEmptyResults(t *testing.T) {
+	mockDB := &mockConn{
+		queryFunc: func(ctx context.Context, query string, args ...interface{}) (driver.Rows, error) {
+			return &mockRows{
+				columns: []string{"name", "value"},
+				data:    []mockRow{},
+			}, nil
+		},
+	}
+	database.SetDB(mockDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/generic", nil)
+	rec := httptest.NewRecorder()
+
+	HandleGenericMetrics(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+
+	var metrics []models.Metric
+	if err := json.Unmarshal(rec.Body.Bytes(), &metrics); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(metrics) != 2 {
+		t.Errorf("expected 2 fallback metrics, got %d", len(metrics))
+	}
+	if metrics[0].Name != "CPU Usage" || metrics[0].Value != 45.2 {
+		t.Errorf("unexpected fallback metric: %+v", metrics[0])
+	}
+}
+
+func TestHandleGenericMetricsWithDBQueryError(t *testing.T) {
+	mockDB := &mockConn{
+		queryFunc: func(ctx context.Context, query string, args ...interface{}) (driver.Rows, error) {
+			return nil, fmt.Errorf("connection timeout")
+		},
+	}
+	database.SetDB(mockDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/generic", nil)
+	rec := httptest.NewRecorder()
+
+	HandleGenericMetrics(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+
+	var metrics []models.Metric
+	if err := json.Unmarshal(rec.Body.Bytes(), &metrics); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(metrics) != 2 {
+		t.Errorf("expected 2 fallback metrics on query error, got %d", len(metrics))
+	}
+}
+
+func TestHandleVelocityMetricsWithDBQueryError(t *testing.T) {
+	mockDB := &mockConn{
+		queryFunc: func(ctx context.Context, query string, args ...interface{}) (driver.Rows, error) {
+			return nil, fmt.Errorf("table not found")
+		},
+	}
+	database.SetDB(mockDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/velocity", nil)
+	rec := httptest.NewRecorder()
+
+	HandleVelocityMetrics(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+
+	if rec.Body.String() != "[]" {
+		t.Errorf("expected empty array on query error, got %s", rec.Body.String())
+	}
+}
+
+func TestHandleActivityMetricsWithDBQueryError(t *testing.T) {
+	mockDB := &mockConn{
+		queryFunc: func(ctx context.Context, query string, args ...interface{}) (driver.Rows, error) {
+			return nil, fmt.Errorf("connection lost")
+		},
+	}
+	database.SetDB(mockDB)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/activity", nil)
+	rec := httptest.NewRecorder()
+
+	HandleActivityMetrics(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+
+	if rec.Body.String() != "[]" {
+		t.Errorf("expected empty array on query error, got %s", rec.Body.String())
 	}
 }
 
