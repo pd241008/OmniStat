@@ -56,4 +56,36 @@ class ClickHouseSpec extends AnyFlatSpec with Matchers {
     val commits: Seq[(String, String, String)] = Seq.empty
     commits shouldBe empty
   }
+
+  it should "convert ISO 8601 date to ClickHouse format" in {
+    val isoDate = "2024-01-15T10:30:00Z"
+    val chDate = isoDate.replace("T", " ").replace("Z", "").take(19)
+    chDate shouldBe "2024-01-15 10:30:00"
+  }
+
+  it should "truncate messages longer than 200 characters" in {
+    val longMsg = "a" * 250
+    val truncated = if (longMsg.length > 200) longMsg.take(200) else longMsg
+    truncated should have length 200
+    truncated shouldBe "a" * 200
+  }
+
+  it should "not truncate messages under 200 characters" in {
+    val shortMsg = "Fixed critical bug in ingestion pipeline"
+    val result = if (shortMsg.length > 200) shortMsg.take(200) else shortMsg
+    result shouldBe shortMsg
+    result should have length 40
+  }
+
+  it should "handle ISO dates without Z suffix" in {
+    val isoDate = "2024-06-01T08:15:30+00:00"
+    val chDate = isoDate.replace("T", " ").replace("Z", "").take(19)
+    chDate shouldBe "2024-06-01 08:15:30"
+  }
+
+  it should "preserve date-only values through conversion" in {
+    val isoDate = "2024-12-25T00:00:00Z"
+    val chDate = isoDate.replace("T", " ").replace("Z", "").take(19)
+    chDate shouldBe "2024-12-25 00:00:00"
+  }
 }

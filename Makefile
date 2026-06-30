@@ -1,4 +1,4 @@
-.PHONY: help run-forge run-gateway run-frontend run-all dev
+.PHONY: help run-forge run-gateway run-frontend run-all dev test test-go test-scala test-frontend
 
 # Default target
 help:
@@ -10,6 +10,12 @@ help:
 	@echo "  make run-frontend   - Start The Terminal (Visualization - Next.js)"
 	@echo "  make run-all        - Start all services concurrently"
 	@echo "  make dev            - Alias for run-all"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test           - Run all tests across all layers"
+	@echo "  make test-go        - Run Go backend tests"
+	@echo "  make test-scala     - Run Scala ingestion tests"
+	@echo "  make test-frontend  - Run frontend Vitest tests"
 
 # The Forge (Data Ingestion)
 run-forge:
@@ -32,3 +38,15 @@ run-all:
 	wait
 
 dev: run-all
+
+# Testing
+test: test-go test-scala test-frontend
+
+test-go:
+	cd backend && go test ./... -v
+
+test-scala:
+	cd data && sbt test
+
+test-frontend:
+	cd frontend && npm test
