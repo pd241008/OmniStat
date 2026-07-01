@@ -2,14 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import LanguageRadar from "@/components/LanguageRadar";
 
-let swrMock = vi.fn(() => ({ data: undefined, error: undefined }));
+let mockData: unknown = undefined;
+let mockError: unknown = undefined;
 
 vi.mock("swr", () => ({
-  default: (...args: any[]) => swrMock(...args),
+  default: () => ({ data: mockData, error: mockError }),
 }));
 
 beforeEach(() => {
   vi.useFakeTimers();
+  mockData = undefined;
+  mockError = undefined;
 });
 
 afterEach(() => {
@@ -34,21 +37,18 @@ describe("LanguageRadar", () => {
   });
 
   it("shows error state when gateway is unreachable", () => {
-    swrMock = vi.fn(() => ({ data: undefined, error: new Error("Gateway down") }));
+    mockError = new Error("Gateway down");
     render(<LanguageRadar />);
     expect(screen.getByText(/ERROR/)).toBeInTheDocument();
     expect(screen.getByText(/GATEWAY_UNREACHABLE/)).toBeInTheDocument();
   });
 
   it("renders language bars when data is loaded", () => {
-    swrMock = vi.fn(() => ({
-      data: [
-        { name: "Scala", val: 85 },
-        { name: "Go", val: 70 },
-        { name: "TypeScript", val: 95 },
-      ],
-      error: undefined,
-    }));
+    mockData = [
+      { name: "Scala", val: 85 },
+      { name: "Go", val: 70 },
+      { name: "TypeScript", val: 95 },
+    ];
     render(<LanguageRadar />);
     expect(screen.getByText("Scala")).toBeInTheDocument();
     expect(screen.getByText("Go")).toBeInTheDocument();
@@ -56,13 +56,10 @@ describe("LanguageRadar", () => {
   });
 
   it("displays percentage values for each language", () => {
-    swrMock = vi.fn(() => ({
-      data: [
-        { name: "Scala", val: 85 },
-        { name: "Go", val: 70 },
-      ],
-      error: undefined,
-    }));
+    mockData = [
+      { name: "Scala", val: 85 },
+      { name: "Go", val: 70 },
+    ];
     render(<LanguageRadar />);
     expect(screen.getByText("85%")).toBeInTheDocument();
     expect(screen.getByText("70%")).toBeInTheDocument();

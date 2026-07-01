@@ -2,18 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import useSWR from "swr";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
+import type { LanguageMetric } from "@/lib/types";
 
 const LanguageRadar = () => {
   const [mounted, setMounted] = useState(false);
   const [rotation, setRotation] = useState(0);
   
-  const { data: languages, error } = useSWR("http://localhost:8080/api/v1/metrics/languages", fetcher, {
+  const { data: languages, error } = useSWR<LanguageMetric[]>("http://localhost:8080/api/v1/metrics/languages", fetcher, {
     refreshInterval: 10000,
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     let r = 0;
     const interval = setInterval(() => {
@@ -35,7 +36,7 @@ const LanguageRadar = () => {
         <div className="mt-8 animate-pulse font-bold z-10 relative">SCANNING_REPOSITORIES...</div>
       ) : (
         <div className="flex flex-col gap-3 mt-4 relative z-10">
-          {languages.map((lang: any, index: number) => (
+          {languages.map((lang: LanguageMetric, index: number) => (
             <div key={lang.name} className="flex flex-col transition-opacity">
               <div className="flex justify-between mb-1 font-bold">
                 <span>{lang.name}</span>
