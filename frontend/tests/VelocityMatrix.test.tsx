@@ -2,8 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import VelocityMatrix from "@/components/VelocityMatrix";
 
+let mockData: unknown = undefined;
+let mockError: unknown = undefined;
+let mockLoading = false;
+
+vi.mock("swr", () => ({
+  default: () => ({ data: mockData, error: mockError, isLoading: mockLoading }),
+}));
+
 beforeEach(() => {
   vi.useFakeTimers();
+  mockData = undefined;
+  mockError = undefined;
+  mockLoading = false;
 });
 
 afterEach(() => {
@@ -59,5 +70,34 @@ describe("VelocityMatrix", () => {
 
     const glowedNodes = cells.filter(c => c.className.includes("shadow-"));
     expect(glowedNodes.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("shows scanning state when loading", () => {
+    mockLoading = true;
+    render(<VelocityMatrix />);
+    expect(screen.getByText("SCANNING_VELOCITY...")).toBeInTheDocument();
+  });
+
+  it("shows error state when fetch fails", () => {
+    mockError = new Error("fail");
+    render(<VelocityMatrix />);
+    expect(screen.getByText("MATRIX_STREAM_INTERRUPTED")).toBeInTheDocument();
+  });
+
+  it("shows empty state when no velocity data", () => {
+    mockData = [];
+    render(<VelocityMatrix />);
+    expect(screen.getByText("NO_VELOCITY_DATA")).toBeInTheDocument();
+  });
+
+  it("renders grid from velocity data", () => {
+    mockData = [
+      { hour: 10, day: 2, commits: 5 },
+      { hour: 14, day: 3, commits: 8 },
+    ];
+    const { container } = render(<VelocityMatrix />);
+    const grid = container.querySelector(".grid-cols-12");
+    const cells = Array.from(grid?.children || []);
+    expect(cells.length).toBe(96);
   });
 });

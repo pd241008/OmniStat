@@ -1,16 +1,22 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import TerminalFeed from "@/components/TerminalFeed";
 
-beforeEach(() => {
-  vi.useFakeTimers();
-});
+let mockData: unknown = undefined;
+let mockError: unknown = undefined;
+let mockLoading = false;
 
-afterEach(() => {
-  vi.useRealTimers();
-});
+vi.mock("swr", () => ({
+  default: () => ({ data: mockData, error: mockError, isLoading: mockLoading }),
+}));
 
 describe("TerminalFeed", () => {
+  beforeEach(() => {
+    mockData = undefined;
+    mockError = undefined;
+    mockLoading = false;
+  });
+
   it("renders initial kernel message", () => {
     render(<TerminalFeed />);
     expect(screen.getByText(/OMNISTAT KERNEL INITIALIZED/)).toBeInTheDocument();
@@ -34,21 +40,36 @@ describe("TerminalFeed", () => {
     expect(screen.getByText(/THE_FORGE STREAM READY/)).toBeInTheDocument();
   });
 
-  it("adds new log lines over time", () => {
+  it("adds activity entries from SWR data", () => {
+    mockData = [
+      { repo_name: "test-repo", committed_at: "2026-01-01T12:00:00Z", message: "fix: resolve issue" },
+      { repo_name: "test-repo", committed_at: "2026-01-01T11:30:00Z", message: "feat: add feature" },
+    ];
     render(<TerminalFeed />);
-    const initialLines = screen.getAllByText(/>/);
-    const initialCount = initialLines.length;
-
-    vi.advanceTimersByTime(2500);
-
-    const linesAfter = screen.getAllByText(/>/);
-    expect(linesAfter.length).toBeGreaterThanOrEqual(initialCount);
+    expect(screen.getByText(/fix: resolve issue/)).toBeInTheDocument();
+    expect(screen.getByText(/feat: add feature/)).toBeInTheDocument();
   });
 
-  it("caps log buffer at 15 most recent lines", () => {
+  it("shows stream sync indicator when loading", () => {
+    mockLoading = true;
     render(<TerminalFeed />);
-    vi.advanceTimersByTime(40000);
-    const logLines = screen.getAllByText(/>/);
-    expect(logLines.length).toBeLessThanOrEqual(18);
+    expect(screen.getByText("STREAM_SYNC")).toBeInTheDocument();
+  });
+
+  it("shows stream error indicator on fetch failure", () => {
+    mockError = new Error("fail");
+    render(<TerminalFeed />);
+    expect(screen.getByText("STREAM_ERROR")).toBeInTheDocument();
+  });
+
+  it("caches log buffer at maximum capacity", () => {
+    mockData = Array.from({ length: 60 }, (_, i) => ({
+      repo_name: "repo",
+      committed_at: `2026-01-01T12:0${i}:00Z`,
+      message: `commit ${i}`,
+    }));
+    const { container } = render(<TerminalFeed />);
+    const logLines = container.querySelectorAll('[class*="flex items-start"]');
+    expect(logLines.length).toBeLessThanOrEqual(55);
   });
 });

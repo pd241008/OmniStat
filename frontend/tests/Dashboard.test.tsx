@@ -2,14 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import Dashboard from "@/app/page";
 
-let swrMock = vi.fn(() => ({ data: undefined, error: undefined }));
+let mockData: unknown = undefined;
+let mockError: unknown = undefined;
 
 vi.mock("swr", () => ({
-  default: (...args: any[]) => swrMock(...args),
+  default: () => ({ data: mockData, error: mockError }),
 }));
 
 beforeEach(() => {
   vi.useFakeTimers();
+  mockData = undefined;
+  mockError = undefined;
 });
 
 afterEach(() => {
@@ -62,20 +65,17 @@ describe("Dashboard", () => {
   });
 
   it("shows error state when SWR returns error", () => {
-    swrMock = vi.fn(() => ({ data: undefined, error: new Error("Uplink lost") }));
+    mockError = new Error("Uplink lost");
     render(<Dashboard />);
     expect(screen.getByText(/CRITICAL ERROR/)).toBeInTheDocument();
     expect(screen.getByText(/FAILED_TO_FETCH_UPLINK/)).toBeInTheDocument();
   });
 
   it("renders loaded metrics from SWR data", () => {
-    swrMock = vi.fn(() => ({
-      data: [
-        { id: 1, name: "CPU Usage", value: 45.2 },
-        { id: 2, name: "Memory Usage", value: 62.8 },
-      ],
-      error: undefined,
-    }));
+    mockData = [
+      { id: 1, name: "CPU Usage", value: 45.2 },
+      { id: 2, name: "Memory Usage", value: 62.8 },
+    ];
     render(<Dashboard />);
     expect(screen.getAllByText("CPU Usage").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Memory Usage").length).toBeGreaterThanOrEqual(1);
@@ -84,12 +84,9 @@ describe("Dashboard", () => {
   });
 
   it("renders progress bars for each metric", () => {
-    swrMock = vi.fn(() => ({
-      data: [
-        { id: 1, name: "Disk I/O", value: 30 },
-      ],
-      error: undefined,
-    }));
+    mockData = [
+      { id: 1, name: "Disk I/O", value: 30 },
+    ];
     const { container } = render(<Dashboard />);
     const bars = container.querySelectorAll("div[style*='width']");
     expect(bars.length).toBeGreaterThanOrEqual(1);

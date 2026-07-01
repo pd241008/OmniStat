@@ -2,27 +2,27 @@
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
+import type { Metric } from "@/lib/types";
 import TerminalFeed from "@/components/TerminalFeed";
 import LanguageRadar from "@/components/LanguageRadar";
 import VelocityMatrix from "@/components/VelocityMatrix";
 import { Activity, Shield, Cpu, Database } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
-  const [uplinkId, setUplinkId] = useState("");
+  const [uplinkId] = useState(() => Date.now().toString(36).toUpperCase().slice(-6));
 
-  const { data: metrics, error } = useSWR("http://localhost:8080/api/v1/metrics/generic", fetcher, {
+  const { data: metrics, error } = useSWR<Metric[]>("http://localhost:8080/api/v1/metrics/generic", fetcher, {
     refreshInterval: 5000,
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
-    setUplinkId(Math.random().toString(36).substring(7).toUpperCase());
   }, []);
 
-  if (!mounted) return null; // Prevent hydration mismatch entirely
+  if (!mounted) return null;
 
   return (
     <main className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-8">
@@ -79,7 +79,7 @@ export default function Dashboard() {
                   SYNCHRONIZING_DATA...
                 </div>
               ) : (
-                metrics.map((m: any) => (
+                metrics.map((m: Metric) => (
                   <div key={m.id} className="flex flex-col gap-2">
                     <div className="flex justify-between text-sm font-bold">
                       <span className="uppercase">{m.name}</span>
