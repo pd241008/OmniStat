@@ -101,10 +101,9 @@ func HandleGenericMetrics(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 	rows, err := db.Query(ctx, `
-		SELECT name, value
+		SELECT name, argMax(value, updated_at) as value
 		FROM system_metrics
-		ORDER BY updated_at DESC
-		LIMIT 10
+		GROUP BY name
 	`)
 
 	if err != nil {

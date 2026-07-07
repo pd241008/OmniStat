@@ -7,6 +7,7 @@ help:
 	@echo "Available commands:"
 	@echo "  make run-forge      - Start The Forge (Data Ingestion - Scala)"
 	@echo "  make run-gateway    - Start The Gateway (API Proxy - Go)"
+	@echo "  make run-agent      - Start The Agent (System Polling - Go)"
 	@echo "  make run-frontend   - Start The Terminal (Visualization - Next.js)"
 	@echo "  make run-all        - Start all services concurrently"
 	@echo "  make dev            - Alias for run-all"
@@ -25,6 +26,10 @@ run-forge:
 run-gateway:
 	cd backend && go run cmd/api/main.go
 
+# The Agent (System Polling)
+run-agent:
+	cd backend && go run cmd/agent/main.go
+
 # The Terminal (Visualization)
 run-frontend:
 	cd frontend && npm run dev
@@ -34,6 +39,7 @@ run-all:
 	@echo "Starting all OmniStat services..."
 	make run-forge & \
 	make run-gateway & \
+	make run-agent & \
 	make run-frontend & \
 	wait
 
